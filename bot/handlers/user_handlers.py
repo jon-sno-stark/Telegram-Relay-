@@ -8,7 +8,7 @@ from ..utils import db
 from ..utils.decorators import user_is_registered
 
 logger = logging.getLogger(__name__)
-APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
+APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID", "-1002556330446")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handles the /start command. Registers new users and guides existing ones."""
