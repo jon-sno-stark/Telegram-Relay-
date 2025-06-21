@@ -1,0 +1,5 @@
+python-telegram-bot[job-queue]
+python-dotenv
+flask
+gunicorn
+motor  # Async driver for MongoDB
