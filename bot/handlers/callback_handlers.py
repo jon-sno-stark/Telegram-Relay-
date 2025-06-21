@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 from ..utils import db
 
 logger = logging.getLogger(__name__)
-APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
+APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID", "-1002556330446")
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Parses callback data and routes to the correct function."""
