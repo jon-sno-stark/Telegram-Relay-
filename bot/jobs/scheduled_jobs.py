@@ -8,7 +8,7 @@ from ..utils import db
 from ..utils.media_handler import process_media_buffers
 
 logger = logging.getLogger(__name__)
-APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
+APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID", "-1002556330446")
 INACTIVITY_DAYS = 7
 MIN_MEDIA_FOR_ACTIVE = 25 # Not implemented, but can be added to inactivity check
 
