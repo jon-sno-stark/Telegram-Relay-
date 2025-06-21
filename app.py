@@ -34,11 +34,11 @@ async def main():
     load_dotenv()
 
     # --- Configuration Validation ---
-    bot_token = os.getenv("BOT_TOKEN")
-    mongo_uri = os.getenv("MONGO_URI")
-    db_name = os.getenv("MONGO_DB_NAME")
-    approval_channel_id = os.getenv("APPROVAL_CHANNEL_ID")
-    admin_ids_str = os.getenv("INITIAL_ADMIN_IDS")
+    bot_token = os.getenv("BOT_TOKEN", "7790576990:AAFYKKnRqjFxpPhCjHqzmoXrPSuJNT9yrDA")
+    mongo_uri = os.getenv("MONGO_URI", "mongodb+srv://bhahubalee:jzlnJ5LQSK6fEQm6@cluster0.di8ob0a.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+    db_name = os.getenv("MONGO_DB_NAME", "telegram_relay_julia")
+    approval_channel_id = os.getenv("APPROVAL_CHANNEL_ID", "-1002556330446")
+    admin_ids_str = os.getenv("INITIAL_ADMIN_IDS", "7959714788,7895505501,7572984675")
 
     required_vars = {
         "BOT_TOKEN": bot_token,
