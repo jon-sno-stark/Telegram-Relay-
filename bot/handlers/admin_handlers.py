@@ -88,8 +88,8 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=user_id_to_unban, text="You have been unbanned. You can use /start to request access again.")
     except Exception:
         pass
-
-  @admin_only
+        
+@admin_only
 async def whitelist_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Adds a user to the whitelist (immune to inactivity checks)."""
     user_id = get_user_id_from_command(update.message)
