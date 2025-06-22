@@ -18,12 +18,20 @@ def create_bot_application(bot_token: str) -> Application:
     """Builds the bot application and registers all handlers and jobs."""
     
     # Use the Defaults class as required by the library
+    # disable_web_page_preview is not a valid argument here.
     defaults = Defaults(
-        parse_mode=ParseMode.HTML,
-        disable_web_page_preview=True,
+        parse_mode=ParseMode.HTML
     )
 
-    application = ApplicationBuilder().token(bot_token).defaults(defaults).build()
+    # Set disable_web_page_preview on the ApplicationBuilder itself
+    application = (
+        ApplicationBuilder()
+        .token(bot_token)
+        .defaults(defaults)
+        .http_version("1.1")
+        .get_updates_http_version("1.1")
+        .build()
+    )
     
     # --- Register Handlers ---
     application.add_handler(CommandHandler("start", user_handlers.start, filters=filters.ChatType.PRIVATE))
