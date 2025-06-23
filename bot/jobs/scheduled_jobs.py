@@ -7,10 +7,10 @@ from ..utils import db
 from ..utils.media_handler import dispatch_media_processing
 
 logger = logging.getLogger(__name__)
-APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
 INACTIVITY_DAYS = 7
 
 async def check_inactive_users(context: ContextTypes.DEFAULT_TYPE):
+    APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
     inactive_users = await db.find_inactive_users(days=INACTIVITY_DAYS)
     if not inactive_users: return
     count = 0
@@ -21,7 +21,7 @@ async def check_inactive_users(context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(user['user_id'], "You have been marked as inactive.")
         except Exception: pass
     logger.info(f"Deactivated {count} inactive users.")
-    if count > 0:
+    if count > 0 and APPROVAL_CHANNEL_ID:
         await context.bot.send_message(APPROVAL_CHANNEL_ID, f"🧹 Deactivated {count} users.")
 
 async def send_service_message(context: ContextTypes.DEFAULT_TYPE):
@@ -34,6 +34,11 @@ async def send_service_message(context: ContextTypes.DEFAULT_TYPE):
         except Exception: pass
 
 async def _send_summary(context: ContextTypes.DEFAULT_TYPE, period: str):
+    APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
+    if not APPROVAL_CHANNEL_ID:
+        logger.warning(f"Cannot send {period} summary: APPROVAL_CHANNEL_ID not set.")
+        return
+
     all_users = await db.get_all_users()
     total_msgs = sum(u.get('total_messages_sent', 0) for u in all_users)
     sorted_users = sorted(all_users, key=lambda u: u.get('media_sent_count', 0), reverse=True)
