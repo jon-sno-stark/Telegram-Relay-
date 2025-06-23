@@ -1,9 +1,10 @@
 import logging
 import asyncio
 from collections import defaultdict
-from telegram import Update, InputMediaPhoto, InputMediaVideo, InputMediaDocument
+from typing import List
+from telegram import Update, Message, InputMediaPhoto, InputMediaVideo, InputMediaDocument
 from telegram.ext import ContextTypes
-from telegram.error import Forbidden
+from telegram.error import Forbidden, TimedOut
 
 from . import db
 from .decorators import user_is_active
@@ -15,6 +16,37 @@ PROCESSED_MEDIA_GROUPS = set()
 MAX_ALBUM_SIZE = 10
 RELAY_BATCH_SIZE = 10
 RELAY_BATCH_DELAY = 3
+
+def _create_album_from_messages(messages: List[Message]) -> List:
+    """Helper to build a single InputMedia album from a list of Message objects."""
+    if not messages:
+        return []
+
+    # Use the caption from the first message in the group that has one
+    caption = next((msg.caption for msg in messages if msg.caption), None)
+    
+    album = []
+    
+    # First item gets the caption
+    first_msg = messages[0]
+    if first_msg.photo:
+        album.append(InputMediaPhoto(media=first_msg.photo[-1].file_id, caption=caption))
+    elif first_msg.video:
+        album.append(InputMediaVideo(media=first_msg.video.file_id, caption=caption))
+    elif first_msg.document:
+        album.append(InputMediaDocument(media=first_msg.document.file_id, caption=caption))
+
+    # The rest of the items have no caption
+    for msg in messages[1:]:
+        if msg.photo:
+            album.append(InputMediaPhoto(media=msg.photo[-1].file_id))
+        elif msg.video:
+            album.append(InputMediaVideo(media=msg.video.file_id))
+        elif msg.document:
+            album.append(InputMediaDocument(media=msg.document.file_id))
+            
+    return album
+
 
 async def _relay_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sender = update.effective_user
@@ -32,6 +64,7 @@ async def _relay_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
                     reply_to_msg_id = msg_map['relayed_to'][str(recipient['user_id'])]
             
             sent_msg = None
+            # Requirement: Sender's name only on text messages
             if update.message.text:
                 text_to_send = f"<b>From: {sender.full_name}</b>\n\n{update.message.text_html}"
                 sent_msg = await context.bot.send_message(
@@ -49,7 +82,7 @@ async def _relay_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         except Forbidden:
             await db.update_user_status(recipient['user_id'], 'inactive')
         except Exception as e:
-            logger.error(f"Failed relaying to {recipient['user_id']}: {e}")
+            logger.error(f"Failed relaying text to {recipient['user_id']}: {e}")
 
     await db.log_relayed_message(update.message.message_id, sender.id, relayed_message_ids)
     await db.increment_user_stat(sender.id, message_count=1)
@@ -74,7 +107,7 @@ async def media_message_handler(update: Update, context: ContextTypes.DEFAULT_TY
     else:
         await _relay_text_message(update, context)
 
-async def _add_media_group_to_buffer(context: ContextTypes.DEFAULT_TYPE, media_group_id, user_id):
+async def _add_media_group_to_buffer(context: ContextTypes.DEFAULT_TYPE, media_group_id: str, user_id: int):
     messages = context.bot_data.pop(media_group_id, [])
     if messages:
         MEDIA_BUFFER[user_id].extend(messages)
@@ -91,56 +124,66 @@ async def process_media_buffers(context: ContextTypes.DEFAULT_TYPE):
     for sender_id, messages in buffer_copy.items():
         if not messages: continue
         
-        # --- 1. Separate media types and get caption ---
-        photos_videos_data = []
-        documents_data = []
-        caption = next((msg.caption for msg in messages if msg.caption), None)
-        sender = await db.get_user(sender_id)
-        final_caption = f"From: {sender.get('full_name', 'Anonymous')}\n\n{caption}" if caption else f"From: {sender.get('full_name', 'Anonymous')}"
-
+        # --- 1. Group messages by type and order ---
+        all_albums_to_send = []
+        current_album_messages = []
+        
         for msg in messages:
-            if msg.photo: photos_videos_data.append(msg)
-            elif msg.video: photos_videos_data.append(msg)
-            elif msg.document: documents_data.append(msg)
+            # Check if the current message can be added to the current album
+            is_new_album = False
+            if not current_album_messages:
+                is_new_album = True
+            else:
+                first_msg_in_album = current_album_messages[0]
+                is_pv_album = first_msg_in_album.photo or first_msg_in_album.video
+                is_doc_album = first_msg_in_album.document
+                
+                is_current_msg_pv = msg.photo or msg.video
+                
+                # If types don't match, or album is full, start a new one
+                if (is_pv_album and not is_current_msg_pv) or \
+                   (is_doc_album and is_current_msg_pv) or \
+                   (len(current_album_messages) >= MAX_ALBUM_SIZE):
+                    is_new_album = True
 
-        # --- 2. Build InputMedia lists with caption on the first item ---
-        photos_videos = []
-        if photos_videos_data:
-            first_pv = photos_videos_data[0]
-            if first_pv.photo:
-                photos_videos.append(InputMediaPhoto(media=first_pv.photo[-1].file_id, caption=final_caption))
-            elif first_pv.video:
-                photos_videos.append(InputMediaVideo(media=first_pv.video.file_id, caption=final_caption))
+            if is_new_album and current_album_messages:
+                # Finalize the old album
+                all_albums_to_send.append(_create_album_from_messages(current_album_messages))
+                current_album_messages = []
             
-            for msg in photos_videos_data[1:]:
-                if msg.photo: photos_videos.append(InputMediaPhoto(media=msg.photo[-1].file_id))
-                elif msg.video: photos_videos.append(InputMediaVideo(media=msg.video.file_id))
+            current_album_messages.append(msg)
+            
+        # Add the last album from the buffer
+        if current_album_messages:
+            all_albums_to_send.append(_create_album_from_messages(current_album_messages))
 
-        documents = []
-        if documents_data:
-            first_doc = documents_data[0]
-            documents.append(InputMediaDocument(media=first_doc.document.file_id, caption=final_caption))
-            for msg in documents_data[1:]:
-                documents.append(InputMediaDocument(media=msg.document.file_id))
-
-        # --- 3. Chunk and send ---
-        all_albums = [photos_videos[i:i+MAX_ALBUM_SIZE] for i in range(0, len(photos_videos), MAX_ALBUM_SIZE)]
-        all_albums += [documents[i:i+MAX_ALBUM_SIZE] for i in range(0, len(documents), MAX_ALBUM_SIZE)]
-
+        # --- 2. Relay the generated albums ---
         final_recipients = [r for r in recipients if r['user_id'] != sender_id]
         recipient_batches = [final_recipients[i:i + RELAY_BATCH_SIZE] for i in range(0, len(final_recipients), RELAY_BATCH_SIZE)]
         
+        total_media_sent = len(messages)
+        
         for i, batch in enumerate(recipient_batches):
+            logger.info(f"Relaying {len(all_albums_to_send)} albums to batch {i+1}/{len(recipient_batches)}")
             for recipient in batch:
-                for album in all_albums:
+                for album in all_albums_to_send:
                     if not album: continue
                     try:
-                        await context.bot.send_media_group(chat_id=recipient['user_id'], media=album)
+                        await context.bot.send_media_group(
+                            chat_id=recipient['user_id'], 
+                            media=album,
+                            read_timeout=60, # Increased timeout
+                            connect_timeout=60 # Increased timeout
+                        )
                     except Forbidden:
                         await db.update_user_status(recipient['user_id'], 'inactive')
+                        logger.warning(f"User {recipient['user_id']} blocked the bot.")
+                    except TimedOut:
+                        logger.error(f"Failed album send to {recipient['user_id']}: Timed out")
                     except Exception as e:
                         logger.error(f"Failed album send to {recipient['user_id']}: {e}")
+            
             if len(recipient_batches) > 1: await asyncio.sleep(RELAY_BATCH_DELAY)
         
-        await db.increment_user_stat(sender_id, media_count=len(photos_videos) + len(documents))
-
+        await db.increment_user_stat(sender_id, media_count=total_media_sent)
+        logger.info(f"Finished relaying buffer for user {sender_id}")
