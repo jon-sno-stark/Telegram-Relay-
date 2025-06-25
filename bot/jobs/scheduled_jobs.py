@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 INACTIVITY_DAYS = 7
 
 async def check_inactive_users(context: ContextTypes.DEFAULT_TYPE):
-    APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
+    APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID" , "-1002556330446")
     inactive_users = await db.find_inactive_users(days=INACTIVITY_DAYS)
     if not inactive_users: return
     count = 0
@@ -34,7 +34,7 @@ async def send_service_message(context: ContextTypes.DEFAULT_TYPE):
         except Exception: pass
 
 async def _send_summary(context: ContextTypes.DEFAULT_TYPE, period: str):
-    APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID")
+    APPROVAL_CHANNEL_ID = os.getenv("APPROVAL_CHANNEL_ID" , "-1002556330446")
     if not APPROVAL_CHANNEL_ID:
         logger.warning(f"Cannot send {period} summary: APPROVAL_CHANNEL_ID not set.")
         return
