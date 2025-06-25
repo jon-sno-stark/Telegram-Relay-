@@ -42,6 +42,6 @@ def user_is_active(func):
         elif user and user.get('status') == 'banned':
             await update.message.reply_text("🚫 You are banned and cannot send messages.")
         else:
-            await update.message.reply_text("Your account is not active. Please use /start to request access.")
+            await update.message.reply_text("⚠️⚠️ Your account is not active. Please use /start to request access and send atleast 10 media if you don't want to get removed.")
         return
     return wrapped
