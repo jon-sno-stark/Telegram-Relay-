@@ -23,7 +23,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("➡️ Request Approval", callback_data=f"request_approval_{user.id}")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
-            "👋 **Welcome to 🎀🍭𝕁𝕦𝕝𝕚𝕒'𝕤 ℙ𝕝𝕒𝕪𝕙𝕠𝕦𝕤𝕖🍭🎀**\n\nTo join this bot chat , your account must be approved by an administrator. "
+            "👋 Welcome to\n🎀🍭𝕁𝕦𝕝𝕚𝕒'𝕤 ℙ𝕝𝕒𝕪𝕙𝕠𝕦𝕤𝕖🍭🎀\n\nTo join this bot chat , your account must be approved by an administrator. "
             "Please click the button below to send your request.",
             reply_markup=reply_markup
         )
