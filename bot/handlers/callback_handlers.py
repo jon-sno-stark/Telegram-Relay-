@@ -54,7 +54,7 @@ async def handle_approval_request(update: Update, context: ContextTypes.DEFAULT_
         logger.info(f"User {user.id} sent an approval request to the admin channel.")
     except Exception as e:
         logger.error(f"Failed to send approval request for {user.id} to channel {APPROVAL_CHANNEL_ID}: {e}")
-        await query.edit_message_text(text="❌ There was an error sending your request. Please contact an admin directly.")
+        await query.edit_message_text(text="❌ There was an error sending your request. Please contact an admin @Jon_snostark directly.")
 
 
 async def handle_user_approval_decision(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -79,11 +79,11 @@ async def handle_user_approval_decision(update: Update, context: ContextTypes.DE
     if action == "approve":
         await db.update_user_status(user_id_to_manage, "active")
         decision_text = f"✅ Approved by {admin.full_name}"
-        user_notification = "🎉 Congratulations! Your request has been approved. You can now send messages to be relayed to other users."
+        user_notification = "🎉 Congratulations! Your request has been approved. You can now send messages to other users."
     else: # deny
         await db.update_user_status(user_id_to_manage, "denied")
         decision_text = f"❌ Denied by {admin.full_name}"
-        user_notification = "😔 We're sorry, your request to join the relay network has been denied."
+        user_notification = "😔 We're sorry, your request to join the bot chat has been denied."
 
     # Notify the user of the decision
     try:
