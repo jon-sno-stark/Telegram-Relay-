@@ -62,6 +62,6 @@ def create_bot_application(bot_token: str) -> Application:
     job_queue.run_repeating(scheduled_jobs.send_service_message, interval=3600 * 3, first=120)
     job_queue.run_repeating(scheduled_jobs.send_daily_summary, interval=3600 * 24, first=180)
     job_queue.run_repeating(scheduled_jobs.send_weekly_summary, interval=3600 * 24 * 7, first=300)
-    job_queue.run_repeating(scheduled_jobs.process_media_buffers_job, interval=20, first=20)
+    job_queue.run_repeating(scheduled_jobs.process_media_buffers_job, interval=15, first=15)
 
     return application
