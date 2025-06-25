@@ -23,7 +23,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("➡️ Request Approval", callback_data=f"request_approval_{user.id}")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
-            "👋 **Welcome!**\n\nTo join this relay network, your account must be approved by an administrator. "
+            "👋 **Welcome to 🎀🍭𝕁𝕦𝕝𝕚𝕒'𝕤 ℙ𝕝𝕒𝕪𝕙𝕠𝕦𝕤𝕖🍭🎀**\n\nTo join this bot chat , your account must be approved by an administrator. "
             "Please click the button below to send your request.",
             reply_markup=reply_markup
         )
@@ -37,16 +37,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status = user_doc.get('status', 'pending')
     
     if status == 'active':
-        await update.message.reply_text("✅ Welcome back! You are an active user. You can now send messages to be relayed.")
+        await update.message.reply_text("✅ Welcome back! You are an active user. You can now send messages to others.")
     elif status == 'banned':
         await update.message.reply_text("🚫 You are banned from using this bot.")
     elif status == 'denied':
-         await update.message.reply_text("❌ Your previous request was denied. You may contact an admin for more information.")
+         await update.message.reply_text("❌ Your previous request was denied. You may contact an admin via /admin command for more information.")
     else: # 'pending' or 'inactive'
         keyboard = [[InlineKeyboardButton("➡️ Re-request Approval", callback_data=f"request_approval_{user.id}")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(
-            "Your account is not currently active. Please request approval to join or re-join the network.",
+            "Your account is not currently active. Please request approval to join or re-join the bot chat.",
             reply_markup=reply_markup
         )
 
