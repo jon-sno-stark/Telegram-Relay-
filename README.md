@@ -1,4 +1,5 @@
 # Telegram Relay Bot for Koyeb
+
 This is a powerful and scalable Telegram relay bot designed to be deployed on Koyeb's free tier. It facilitates communication between approved users, ensuring efficient message delivery even with high media traffic. The bot uses MongoDB to persist all user data, messages, and settings, so no information is lost on restart.
 
 # Key Features
@@ -22,7 +23,7 @@ Approval System: New users must request approval via an interactive button. Admi
 
 /promote <user_id>: Promote a user to admin.
 
-/ban <user_id>: Ban a user, stopping them from receiving or sending messages.
+/ban <user_id> (or in reply to a message): Ban a user, stopping them from receiving or sending messages.
 
 /unban <user_id>: Unban a user.
 
@@ -46,7 +47,7 @@ Monitoring & Stats:
 
 /stats: View a list of all users, their status, and total sent media message count in descending order.
 
-/userinfo <user_id>: Get detailed information about a specific user (status, message count, last active).
+/userinfo <user_id> (or in reply to a message): Get detailed information about a specific user (status, message count, last active).
 
 Daily/Weekly Summaries: Automatically sends a summary to the admin channel with total relayed messages and a top 10 list of active users.
 
